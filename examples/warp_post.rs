@@ -1,7 +1,9 @@
-extern crate serde;
 #[macro_use] extern crate serde_derive;
-extern crate pretty_env_logger;
 #[macro_use] extern crate warp;
+#[macro_use] extern crate warp_dsl;
+extern crate http;
+extern crate pretty_env_logger;
+extern crate serde;
 
 use warp::Filter;
 
@@ -57,7 +59,14 @@ fn main() {
         path!("post" / usize).
         map(|id| warp::reply::json(&make_post(id))));
 
+    let get_post = path!("post" / usize).
+        and(warp_dsl::method(&http::Method::PATCH)).
+        map(|id| format!("HEAD {}", id));
+
+    
+
     let routes = get_posts.or(post_posts).or(get_post);
+    let routes = get_post;
 
     warp::serve(routes)
         .run(([0, 0, 0, 0], 3030));

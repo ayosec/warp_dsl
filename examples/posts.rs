@@ -1,10 +1,10 @@
 extern crate serde;
 #[macro_use] extern crate serde_derive;
 extern crate pretty_env_logger;
-extern crate warp;
+#[macro_use] extern crate warp;
 #[macro_use] extern crate warp_dsl;
 
-use warp::Filter;
+use warp::{body, Filter};
 
 #[derive(Debug, Deserialize, Serialize)]
 struct Post {
@@ -32,13 +32,27 @@ fn make_post(id: usize) -> Post {
 fn main() {
     pretty_env_logger::init();
 
-    let routes = router! {
+    let routes = router!(
 
         // GET /posts
         // POST /posts
 
+        delete {
+            complete {
+                format!("DELETE request")
+            }
+        }
+
         path("posts") {
+
             get {
+
+                path(u64) {|id|
+                    complete {
+                        format!("Request for post {}", id)
+                    }
+                }
+
                 complete {
                     let posts = Posts {
                         total: 5,
@@ -46,29 +60,31 @@ fn main() {
                     };
                     warp::reply::json(&posts)
                 }
+
             }
 
             post {
-                body::json() { |mut post: Post|
+
+                (body::json()) {|mut post: Post|
                     complete {
                         post.id = Some(1);
                         println!("Create post: {:?}", post);
                         warp::reply::json(&post)
                     }
                 }
+
             }
         }
 
         // GET /post/:id
-        get & path("post" / usize) { |id|
-            complete {
-                let post = make_post(id);
-                warp::reply::json(&post)
-            }
-        }
+        //get & path("post" / usize) { |id|
+        //    complete {
+        //        let post = make_post(id);
+        //        warp::reply::json(&post)
+        //    }
+        //}
 
-    };
+    );
 
-    warp::serve(routes)
-        .run(([0, 0, 0, 0], 3030));
+    warp::serve(routes).run(([0; 4], 4000));
 }

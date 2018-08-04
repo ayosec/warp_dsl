@@ -1,6 +1,11 @@
-extern crate warp;
+#[macro_use] extern crate proc_macro_hack;
 
-#[macro_export]
-macro_rules! router {
-    ($($T:tt)*) => { 0 };
+#[allow(unused_imports)]
+#[macro_use]
+extern crate warp_dsl_impl;
+
+pub use warp_dsl_impl::*;
+
+proc_macro_expr_decl! {
+    router! => router_dsl_impl
 }

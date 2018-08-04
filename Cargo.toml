@@ -4,10 +4,12 @@ version = "0.1.0"
 authors = ["ayosec@gmail.com"]
 
 [dependencies]
-warp = "0.1"
+warp_dsl_impl = { versin = "0.1", path = "impl" }
+proc-macro-hack = "0.4"
 
 [dev-dependencies]
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 pretty_env_logger = "*"
+warp = { git = "https://github.com/ayosec/warp", branch ="is-method" }

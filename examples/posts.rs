@@ -86,6 +86,14 @@ fn main() {
             }
         }
 
+        path("cookie" / String) {|name|
+            cookie("X-Test") {|value|
+                complete {
+                    format!("Cookie for {} = {:?}\n", name, value)
+                }
+            }
+        }
+
     );
 
     warp::serve(routes).run(([0; 4], 4000));

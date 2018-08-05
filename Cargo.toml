@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["ayosec@gmail.com"]
 
 [dependencies]
-warp_dsl_impl = { versin = "0.1", path = "impl" }
+warp_dsl_impl = { version = "0.1", path = "impl" }
 proc-macro-hack = "0.4"
 
 [dev-dependencies]

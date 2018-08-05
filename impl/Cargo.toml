@@ -1,13 +1,11 @@
 [package]
 name = "warp_dsl_impl"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["ayosec@gmail.com"]
 
 [lib]
 proc-macro = true
 
 [dependencies]
-#syn = "0.14"
-#quote = "0.6"
 proc-macro-hack = "0.4"
 proc-macro2 = "0.4"

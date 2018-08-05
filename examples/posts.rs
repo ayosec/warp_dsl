@@ -34,14 +34,24 @@ fn main() {
 
     let routes = router!(
 
-        // GET /posts
-        // POST /posts
-
-        delete {
+        // GET /post/:id
+        get & path("post" / usize) {|id|
             complete {
-                format!("DELETE request")
+                let post = make_post(id);
+                warp::reply::json(&post)
             }
         }
+
+        // Any OPTIONS request
+
+        options {
+            complete {
+                format!("OPTIONS request")
+            }
+        }
+
+        // GET /posts
+        // POST /posts
 
         path("posts") {
 
@@ -75,14 +85,6 @@ fn main() {
 
             }
         }
-
-        // GET /post/:id
-        //get & path("post" / usize) { |id|
-        //    complete {
-        //        let post = make_post(id);
-        //        warp::reply::json(&post)
-        //    }
-        //}
 
     );
 

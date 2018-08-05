@@ -1,7 +1,7 @@
 #[derive(Clone,Default)]
 pub(crate) struct Builder {
     pub(crate) filters: String,
-    pub(crate) extactors: String,
+    pub(crate) closure_args: String,
 }
 
 impl Builder {
@@ -16,9 +16,9 @@ impl Builder {
     }
 
     pub(crate) fn append_closure_args(&mut self, closure_args: &str) {
-        if !self.extactors.is_empty() {
-            self.extactors.push(',');
+        if !self.closure_args.is_empty() {
+            self.closure_args.push(',');
         }
-        self.extactors.push_str(closure_args);
+        self.closure_args.push_str(closure_args);
     }
 }

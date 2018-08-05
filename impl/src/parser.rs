@@ -7,6 +7,7 @@ use std::mem;
 #[derive(Debug)]
 pub(crate) struct DirectiveTree {
     pub(crate) filters: Vec<String>,
+    pub(crate) http_methods: Vec<String>,
     pub(crate) body: TokenStream,
     pub(crate) closure_args: Vec<String>,
     pub(crate) is_completed: bool,
@@ -25,6 +26,7 @@ impl DirectiveTree {
 
         let mut filters = Vec::new();
         let mut is_completed = false;
+        let mut http_methods = Vec::new();
         let mut current_filter = Vec::new();
         let mut closure_args = Vec::new();
         let body;
@@ -58,6 +60,7 @@ impl DirectiveTree {
                             let cf = mem::replace(&mut current_filter, Vec::new());
                             match parse_declaration(cf) {
                                 DirectiveDecl::Filter(f) => filters.push(f),
+                                DirectiveDecl::HttpMethod(m) => http_methods.push(m),
                                 DirectiveDecl::Complete => is_completed = true,
                             }
                         }
@@ -77,10 +80,11 @@ impl DirectiveTree {
         let cf = mem::replace(&mut current_filter, Vec::new());
         match parse_declaration(cf) {
             DirectiveDecl::Filter(f) => filters.push(f),
+            DirectiveDecl::HttpMethod(m) => http_methods.push(m),
             DirectiveDecl::Complete => is_completed = true,
         }
 
-        DirectiveTree { filters, closure_args, body, is_completed }
+        DirectiveTree { filters, http_methods, closure_args, body, is_completed }
     }
 }
 
@@ -95,13 +99,14 @@ where
         let mut state = state.clone();
 
         let directive = DirectiveTree::from_tokens(&mut stream);
-        directive.closure_args.iter().for_each(|f| state.append_closure_args(&f));
+        directive.closure_args.iter().for_each(|a| state.append_closure_args(&a));
         directive.filters.iter().for_each(|f| state.append_filter(&f));
+        directive.http_methods.iter().for_each(|m| state.append_http_method(&m));
 
         let result = {
             if directive.is_completed {
                 if state.filters.is_empty() {
-                    state.append_filter("any()");
+                    state.append_filter("::warp::any()");
                 }
 
                 let mut filters = state.filters;
@@ -111,7 +116,10 @@ where
                 filters.push_str(&directive.body.to_string());
                 filters.push_str("})");
 
-                filters
+                match state.http_method {
+                    Some(m) => format!("::warp::{}({})", m, filters),
+                    None => filters,
+                }
             } else {
                 parse_body(&mut directive.body.into_iter(), &state)
             }

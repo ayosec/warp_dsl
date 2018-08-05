@@ -4,6 +4,7 @@ use proc_macro2::{TokenStream, TokenTree};
 #[derive(Debug)]
 pub(crate) enum DirectiveDecl {
     Complete,
+    HttpMethod(String),
     Filter(String),
 }
 
@@ -36,8 +37,7 @@ pub(crate) fn parse(name: &str, tokens: &mut impl Iterator<Item = DeclItem>) -> 
 
         "connect" | "delete" | "get" | "head" | "options" | "patch" | "post" | "put" | "trace" => {
             expect_no_args();
-            let http_method = name.to_ascii_uppercase();
-            DirectiveDecl::Filter(format!("::warp::is_method(&warp::http::Method::{})", http_method))
+            DirectiveDecl::HttpMethod(name.to_string())
         }
 
         "cookie" => {

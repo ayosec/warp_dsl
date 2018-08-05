@@ -42,11 +42,11 @@ fn main() {
             }
         }
 
-        // Any OPTIONS request
+        // Any DELETE request
 
-        options {
+        delete {
             complete {
-                format!("OPTIONS request")
+                format!("DELETE request")
             }
         }
 
@@ -87,7 +87,7 @@ fn main() {
         }
 
         path("cookie" / String) {|name|
-            cookie("X-Test") {|value|
+            cookie(optional "X-Test") {|value|
                 complete {
                     format!("Cookie for {} = {:?}\n", name, value)
                 }

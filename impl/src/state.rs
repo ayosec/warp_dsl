@@ -1,7 +1,10 @@
+use std::mem;
+
 #[derive(Clone,Default)]
 pub(crate) struct State {
     pub(crate) filters: String,
     pub(crate) closure_args: String,
+    pub(crate) http_method: Option<String>,
 }
 
 impl State {
@@ -20,5 +23,12 @@ impl State {
             self.closure_args.push(',');
         }
         self.closure_args.push_str(closure_args);
+    }
+
+    pub(crate) fn append_http_method(&mut self, http_method: &str) {
+        let old = mem::replace(&mut self.http_method, Some(http_method.into()));
+        if let Some(m) = old {
+            panic!("Found HTTP method '{}' when try to set '{}'", m, http_method);
+        }
     }
 }

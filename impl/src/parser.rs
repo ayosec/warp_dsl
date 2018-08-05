@@ -1,12 +1,7 @@
+use builtins::{self, DirectiveDecl};
 use proc_macro2::{Delimiter, TokenTree, TokenStream};
 use std::iter::FromIterator;
 use std::mem;
-
-#[derive(Debug)]
-pub(crate) enum DirectiveDecl {
-    Complete,
-    Filter(String),
-}
 
 #[derive(Debug)]
 pub(crate) struct DirectiveTree {
@@ -14,6 +9,11 @@ pub(crate) struct DirectiveTree {
     pub(crate) body: TokenStream,
     pub(crate) closure_args: Vec<String>,
     pub(crate) is_completed: bool,
+}
+
+pub(crate) enum DeclItem {
+    Ident(String),
+    FnCall(TokenStream),
 }
 
 impl DirectiveTree {
@@ -29,20 +29,17 @@ impl DirectiveTree {
         let body;
 
         'consumer: loop {
-            let token = match tokens.next() {
-                Some(t) => t,
-                None => panic!("EOF looking for body directive"),
-            };
+            let token = tokens.next().expect("EOF looking for body directive");
 
             match &token {
                 TokenTree::Ident(_) => {
-                    current_filter.push(token.clone())
+                    current_filter.push(DeclItem::Ident(token.to_string()))
                 }
 
                 TokenTree::Group(group) => {
                     match group.delimiter() {
                         Delimiter::Parenthesis => {
-                            current_filter.push(token.clone())
+                            current_filter.push(DeclItem::FnCall(group.stream()))
                         }
 
                         Delimiter::Brace => {
@@ -86,7 +83,7 @@ impl DirectiveTree {
     }
 }
 
-fn parse_declaration(mut tokens: Vec<TokenTree>) -> DirectiveDecl {
+fn parse_declaration(mut tokens: Vec<DeclItem>) -> DirectiveDecl {
 
     let mut tokens = tokens.drain(..);
 
@@ -95,57 +92,15 @@ fn parse_declaration(mut tokens: Vec<TokenTree>) -> DirectiveDecl {
             panic!("Found body without a directive")
         }
 
-        Some(TokenTree::Ident(ident)) => {
-            parse_declaration_by_name(ident.to_string().as_str(), &mut tokens)
+        Some(DeclItem::Ident(ident)) => {
+            builtins::parse(ident.as_str(), &mut tokens)
         }
 
-        Some(TokenTree::Group(group)) => {
-            let expr = group.stream().to_string();
+        Some(DeclItem::FnCall(stream)) => {
+            let expr = stream.to_string();
             DirectiveDecl::Filter(expr)
         }
-
-        _ => unreachable!()
     }
-}
-
-fn parse_declaration_by_name(name: &str, tokens: &mut impl Iterator<Item = TokenTree>) -> DirectiveDecl {
-
-    let args = match tokens.next() {
-        Some(TokenTree::Group(group)) => Some(group.stream()),
-        None => None,
-        _ => panic!("Expected '(' after directive name"),
-    };
-
-    if tokens.next().is_some() {
-        panic!("Too many tokens after directive declaration");
-    }
-
-    match name {
-        "path" => {
-            let args = args.expect("Missing arguments for 'path'");
-            DirectiveDecl::Filter(format!("path!({})", args))
-        }
-
-        "connect" | "delete" | "get" | "head" | "options" | "patch" | "post" | "put" | "trace" => {
-            if args.is_some() {
-                panic!("'{}' directive does not take arguments", name);
-            }
-
-            let http_method = name.to_ascii_uppercase();
-            DirectiveDecl::Filter(format!("::warp::is_method(&warp::http::Method::{})", http_method))
-        }
-
-        "complete" => {
-            if args.is_some() {
-                panic!("'complete' directive does not take arguments");
-            }
-
-            DirectiveDecl::Complete
-        }
-
-        _ => panic!("Invalid directive '{}'. Use (...) to use a custom filter.", name),
-    }
-
 }
 
 fn parse_closure_args<S>(closure_args: &mut Vec<String>, tokens: &mut S)
@@ -153,16 +108,17 @@ where
     S: Iterator<Item = TokenTree>
 {
     let mut args = Vec::new();
-    while let Some(token) = tokens.next() {
+    loop {
+        let token = tokens.next().expect("EOF looking for '|'");
+
         match &token {
-            TokenTree::Punct(p) if p.as_char() == '|' => {
-                let stream = TokenStream::from_iter(args.into_iter());
-                closure_args.push(stream.to_string());
-                return;
-            }
-            _ => { args.push(token.clone()); }
+            TokenTree::Punct(p) if p.as_char() == '|' => break,
+            _ => (),
         }
+
+        args.push(token);
     }
 
-    panic!("EOF looking for '|'");
+    let stream = TokenStream::from_iter(args.into_iter());
+    closure_args.push(stream.to_string());
 }

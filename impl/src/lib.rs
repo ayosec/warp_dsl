@@ -2,6 +2,7 @@
 extern crate proc_macro2;
 
 mod builder;
+mod builtins;
 mod parser;
 
 use builder::Builder;

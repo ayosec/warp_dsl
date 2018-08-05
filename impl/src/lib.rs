@@ -16,14 +16,20 @@ proc_macro_expr_impl! {
         let mut stream = TokenStream::from_str(input).unwrap().into_iter();
         let result = parse_body(&mut stream, Builder::default());
 
-        if env::var("DSL_DEBUG").is_ok() {
-            println!("======== [DEBUG:INPUT] =========");
-            for token in TokenStream::from_str(input).unwrap() {
-                println!("{:#?}", token);
+        if let Ok(debug) = env::var("WARPDSL_DEBUG") {
+            if debug.contains("input") {
+                eprintln!("======== [DEBUG:INPUT] =========");
+                for token in TokenStream::from_str(input).unwrap() {
+                    eprintln!("{:#?}", token);
+                }
+                eprintln!("================================");
             }
-            println!("======== [DEBUG:OUTPUT] ========");
-            println!("{}", result);
-            println!("================================");
+
+            if debug.contains("output") {
+                eprintln!("======== [DEBUG:OUTPUT] ========");
+                eprintln!("{}", result);
+                eprintln!("================================");
+            }
         }
 
         result

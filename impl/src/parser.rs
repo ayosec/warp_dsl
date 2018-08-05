@@ -1,5 +1,6 @@
 use builtins::{self, DirectiveDecl};
 use proc_macro2::{Delimiter, TokenTree, TokenStream};
+use state::State;
 use std::iter::FromIterator;
 use std::mem;
 
@@ -81,6 +82,60 @@ impl DirectiveTree {
 
         DirectiveTree { filters, closure_args, body, is_completed }
     }
+}
+
+pub(crate) fn parse_body<S>(stream: &mut S, state: &State) -> String
+where
+    S: Iterator<Item = TokenTree>
+{
+    let mut directives = Vec::new();
+    let mut stream = stream.peekable();
+
+    while stream.peek().is_some() {
+        let mut state = state.clone();
+
+        let directive = DirectiveTree::from_tokens(&mut stream);
+        directive.closure_args.iter().for_each(|f| state.append_closure_args(&f));
+        directive.filters.iter().for_each(|f| state.append_filter(&f));
+
+        let result = {
+            if directive.is_completed {
+                if state.filters.is_empty() {
+                    state.append_filter("any()");
+                }
+
+                let mut filters = state.filters;
+                filters.push_str(".map(|");
+                filters.push_str(&state.closure_args);
+                filters.push_str("| {");
+                filters.push_str(&directive.body.to_string());
+                filters.push_str("})");
+
+                filters
+            } else {
+                parse_body(&mut directive.body.into_iter(), &state)
+            }
+        };
+
+        directives.push(result);
+    }
+
+    let mut result = String::new();
+    for directive in directives {
+        if result.is_empty() {
+            result.push('(');
+        } else {
+            result.push_str(".or(");
+        }
+        result.push_str(&directive);
+        result.push(')');
+    }
+
+    if result.is_empty() {
+        panic!("Missing routes");
+    }
+
+    result
 }
 
 fn parse_declaration(mut tokens: Vec<DeclItem>) -> DirectiveDecl {

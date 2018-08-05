@@ -1,10 +1,10 @@
 #[derive(Clone,Default)]
-pub(crate) struct Builder {
+pub(crate) struct State {
     pub(crate) filters: String,
     pub(crate) closure_args: String,
 }
 
-impl Builder {
+impl State {
     pub(crate) fn append_filter(&mut self, filter: &str) {
         if self.filters.is_empty() {
             self.filters.push('(');

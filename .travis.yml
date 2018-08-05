@@ -1,0 +1,18 @@
+language: rust
+sudo: false
+
+matrix:
+  include:
+    - rust: stable
+    - rust: beta
+    - rust: nightly
+    # minimum rustc version
+    - rust: 1.26.0
+      script: cargo build
+
+script:
+  - cargo test
+
+notifications:
+  email:
+    on_success: never

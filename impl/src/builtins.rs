@@ -35,6 +35,11 @@ pub(crate) fn parse(name: &str, tokens: &mut impl Iterator<Item = DeclItem>) -> 
             DirectiveDecl::Filter(format!("path!({})", args))
         }
 
+        "index" => {
+            expect_no_args();
+            DirectiveDecl::Filter("::warp::index()".into())
+        }
+
         "connect" | "delete" | "get" | "head" | "options" | "patch" | "post" | "put" | "trace" => {
             expect_no_args();
             DirectiveDecl::HttpMethod(name.to_string())

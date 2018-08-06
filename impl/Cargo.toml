@@ -2,6 +2,9 @@
 name = "warp_dsl_impl"
 version = "0.0.1"
 authors = ["ayosec@gmail.com"]
+description = "Experimental DSL for warp"
+license = "MIT"
+repository = "https://github.com/ayosec/warp_dsl"
 
 [lib]
 proc-macro = true
